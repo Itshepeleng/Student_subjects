@@ -36,16 +36,16 @@ class StudentViewModel extends ChangeNotifier {
   void changeSubject() {
     // 1. Calculate new values (same as Unit 1)
     int newIndex = (_student.currentIndex + 1) % _student.subjects.length;
-    String newSubject = _student.subjects[newIndex];
-    // 2. Create NEW StudentModel with updated values
+   // 2. Update the model: Change index, subject AND reset grade
     _student = _student.copyWith(
       currentIndex: newIndex,
-      currentSubject: newSubject,
+      currentSubject: _student.subjects[newIndex],
+      grade: 0.0, 
     );
     notifyListeners();
   }
 
-// These now just become "shortcuts" to the master method
+//  "shortcuts" to the master method
   void increaseGrade(double amount) => adjustGrade(amount);
   void decreaseGrade(double amount) => adjustGrade(-amount);
 
@@ -54,4 +54,19 @@ class StudentViewModel extends ChangeNotifier {
     _student = _student.copyWith(grade: newGrade);
     notifyListeners(); // Tells the UI the grade changed
   }
+
+  // method to change the students in the system
+  void switchStudent(String newName) {
+    // Resetting the model with a new name and resetting grade/index
+    _student = StudentModel(
+      name: newName,
+      currentSubject: _student.subjects[0],
+      subjects: _student.subjects,
+      currentIndex: 0,
+      grade: 0.0,
+    );
+    
+      
+    notifyListeners();
+  } 
 }

@@ -24,6 +24,43 @@ class StudentView extends StatelessWidget {
       appBar: AppBar(
         title: const Text("My Student Card - MVVM"),
         backgroundColor: Colors.blue,
+        actions: [
+          PopupMenuButton<String>(
+            onSelected: (value) {
+              if (value == 'change_student') {
+                _showChangeStudentDialog(context);
+              } else if (value == 'reset_grade') {
+                context.read<StudentViewModel>().adjustGrade(
+                  -100,
+                ); // Quick reset to 0
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                const PopupMenuItem(
+                  value: 'change_student',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person, color: Colors.black54),
+                      SizedBox(width: 10),
+                      Text("Change Student"),
+                    ],
+                  ),
+                ),
+                const PopupMenuItem(
+                  value: 'reset_grade',
+                  child: Row(
+                    children: [
+                      Icon(Icons.refresh, color: Colors.black54),
+                      SizedBox(width: 10),
+                      Text("Reset Grade"),
+                    ],
+                  ),
+                ),
+              ];
+            },
+          ),
+        ],
       ),
       body: Center(
         child: Column(
@@ -62,6 +99,21 @@ class StudentView extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // PROFILE PICTURE SECTION
+        Container(
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            border: Border.all(color: Colors.blue.shade100, width: 4),
+          ),
+          child: const CircleAvatar(
+            radius: 50,
+            backgroundColor: Colors.blue,
+            child: Icon(Icons.person, size: 50, color: Colors.white),
+          ),
+        ),
+        const SizedBox(height: 15),
+        
+        // Student Details
           Text(
             "Student Name: ${viewModel.studentName}",
             style: const TextStyle(fontSize: 24),
@@ -152,36 +204,78 @@ class StudentView extends StatelessWidget {
     );
   }
 
-  // New Grade UI Section
   Widget _buildGradeSection(BuildContext context, StudentViewModel viewModel) {
-    return Column(
-      children: [
-        Text(
-          "Current Grade: ${viewModel.grade.toStringAsFixed(0)}%",
-          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            ElevatedButton(
-              onPressed:
-                  () => _showAmountDialog(
-                    context,
-                    viewModel,
-                    isIncreasing: false,
-                  ),
-              child: const Text("- Decrease"),
-            ),
-            const SizedBox(width: 20),
-            ElevatedButton(
-              onPressed:
-                  () =>
-                      _showAmountDialog(context, viewModel, isIncreasing: true),
-              child: const Text("+ Increase"),
-            ),
-          ],
-        ),
-      ],
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 10)],
+      ),
+      child: Column(
+        children: [
+          // The Gauge
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                width: 120,
+                height: 120,
+                child: CircularProgressIndicator(
+                  value: viewModel.grade / 100, // Converts 0-100 to 0.0-1.0
+                  strokeWidth: 10,
+                  backgroundColor: Colors.grey[200],
+                  // Dynamic color: Gray if 0, Orange if low, Blue if high
+                  color:
+                      viewModel.grade == 0
+                          ? Colors.grey
+                          : (viewModel.grade < 50
+                              ? Colors.orange
+                              : Colors.blue),
+                ),
+              ),
+              Text(
+                "${viewModel.grade.toInt()}%",
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // The Buttons
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton.icon(
+                onPressed:
+                    () => _showAmountDialog(
+                      context,
+                      viewModel,
+                      isIncreasing: false,
+                    ),
+                icon: const Icon(Icons.remove),
+                label: const Text("Decrease"),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.redAccent,
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed:
+                    () => _showAmountDialog(
+                      context,
+                      viewModel,
+                      isIncreasing: true,
+                    ),
+                icon: const Icon(Icons.add),
+                label: const Text("Increase"),
+                style: ElevatedButton.styleFrom(backgroundColor: Colors.green),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -240,6 +334,39 @@ class StudentView extends StatelessWidget {
                 ),
               ],
             ),
+          ),
+    );
+  }
+
+  void _showChangeStudentDialog(BuildContext context) {
+    final TextEditingController nameController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: const Text("Enter New Student Name"),
+            content: TextField(
+              controller: nameController,
+              decoration: const InputDecoration(hintText: "e.g. John Doe"),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text("Cancel"),
+              ),
+              TextButton(
+                onPressed: () {
+                  if (nameController.text.isNotEmpty) {
+                    context.read<StudentViewModel>().switchStudent(
+                      nameController.text,
+                    );
+                  }
+                  Navigator.pop(context);
+                },
+                child: const Text("Switch"),
+              ),
+            ],
           ),
     );
   }
